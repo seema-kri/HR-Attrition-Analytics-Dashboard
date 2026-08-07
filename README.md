@@ -1,6 +1,6 @@
 # HR Attrition Analytics Dashboard
 
-**Diagnosing why employees leave — and where retention effort should go — using Microsoft Fabric and Power BI.**
+**Diagnosing why employees leave and where retention effort should go using Microsoft Fabric and Power BI.**
 
 Analyzing employee attrition across departments, compensation bands, and behavioral factors to support HR retention strategy, built with **Microsoft Fabric (Dataflow Gen2, Lakehouse)** and **Power BI**.
 
