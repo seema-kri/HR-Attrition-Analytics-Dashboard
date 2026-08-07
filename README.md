@@ -31,7 +31,7 @@ Analyzing employee attrition across departments, compensation bands, and behavio
 
 ## Overview
 
-This project delivers an end-to-end HR attrition analytics solution — from raw data ingestion to a governed, interactive Power BI report — built entirely on the Microsoft Fabric platform.
+This project delivers an end-to-end HR attrition analytics solution — from raw data ingestion to a governed, interactive Power BI report built entirely on the Microsoft Fabric platform.
 
 Employee attrition was ingested via **Dataflow Gen2**, cleaned and enriched with calculated business columns, loaded into a **Fabric Lakehouse**, modeled with custom **DAX measures**, and visualized across a two-page Power BI report with drill-down, cross-filtering, and role-based **Column-Level Security** on sensitive payroll data.
 
