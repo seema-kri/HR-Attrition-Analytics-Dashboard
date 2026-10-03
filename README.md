@@ -1,202 +1,178 @@
 # HR Attrition Analytics Dashboard
 
-**An end-to-end People Analytics engagement: diagnosing why employees leave, quantifying the cost, and directing retention investment to where it will move the needle, built on Microsoft Fabric and Power BI.**
-
-![Power BI](https://img.shields.io/badge/Power_BI-F2C811?style=flat&logo=powerbi&logoColor=black)
-![Microsoft Fabric](https://img.shields.io/badge/Microsoft_Fabric-0078D4?style=flat&logo=microsoftazure&logoColor=white)
-![DAX](https://img.shields.io/badge/DAX-742774?style=flat)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
-
-📊 **[View Live Dashboard](https://app.fabric.microsoft.com/links/beNxlPJ9tw?ctid=e93d71d6-b5c0-4b78-a861-d9964ecdfcd6&pbi_source=linkShare)** &nbsp;|&nbsp; 📄 [Business Requirements Document](Docs/BRD_HR_Attrition_Dashboard.docx) &nbsp;|&nbsp; 📽️ [Stakeholder Presentation](Docs/HR_Attrition_Presentation.pptx)
-
----
+Diagnosing why employees leave and where to act first, using Microsoft Fabric (Dataflow Gen2, Lakehouse) and Power BI.
 
 ## Table of Contents
-- [Executive Summary](#executive-summary)
-- [Live Dashboard](#live-dashboard)
+
+- [Overview](#overview)
 - [Business Problem](#business-problem)
-- [Project Deliverables](#project-deliverables)
 - [Dataset Description](#dataset-description)
 - [Tools & Technologies](#tools--technologies)
 - [Project Structure](#project-structure)
-- [Methodology](#methodology)
-- [Key Findings](#key-findings)
-- [Dashboard Walkthrough](#dashboard-walkthrough)
-- [Governance & Data Security](#governance--data-security)
+- [Data Cleaning & Preparation](#data-cleaning--preparation)
+- [EDA & Key Insights](#eda--key-insights)
+- [Dashboard](#dashboard)
 - [How to Run This Project](#how-to-run-this-project)
-- [Recommendations & Roadmap](#recommendations--roadmap)
+- [Final Recommendations / Future Work](#final-recommendations--future-work)
 - [Author & Contact](#author--contact)
 
----
+## Overview
 
-## Executive Summary
+End-to-end HR analytics project. Raw employee data is ingested into a Microsoft Fabric Lakehouse, modeled in a Power BI semantic model, and published as a two-page interactive dashboard (Overview and Deep Dive). Individual salary data is protected with column-level security, so HR can explore attrition patterns freely without exposing pay.
 
-This project was scoped and delivered the way a People Analytics function inside a large enterprise or advisory practice would run it: starting with a **signed-off Business Requirements Document**, not a spreadsheet. Every downstream artifact, the data model, the dashboard, the executive readout, traces back to the business questions defined up front.
+**Scope:** 1,470 employees, 237 leavers, breakdowns by department, job role, age, gender, education, marital status, business travel, overtime and salary band.
 
-The result: HR Leadership can now answer in **seconds**, self-service, questions that previously took days of manual data pulls, and can point retention spend at the segments where it will actually reduce cost, backed by evidence rather than anecdote.
-
-| | |
-|---|---|
-| **Overall attrition rate** | **16.1%** (vs. 10 to 15% industry benchmark) |
-| **Headcount analyzed** | 1,470 employees |
-| **Highest-risk segment** | Sales Representatives, 39.8% attrition |
-| **Time-to-insight** | Days to seconds, self-service dashboard |
-
-## Live Dashboard
-
-📊 **[Open the interactive Power BI dashboard](https://app.fabric.microsoft.com/links/beNxlPJ9tw?ctid=e93d71d6-b5c0-4b78-a861-d9964ecdfcd6&pbi_source=linkShare)**
-
-Explore the report live in your browser, no download required. Requires access via the linked Microsoft Fabric/Power BI workspace.
+**Live report:** [Open in Microsoft Fabric](https://app.fabric.microsoft.com/links/beNxlPJ9tw?ctid=e93d71d6-b5c0-4b78-a861-d9964ecdfcd6&pbi_source=linkShare) (requires workspace access)
 
 ## Business Problem
 
-HR Leadership needed to understand why employees were leaving the organization and where to focus retention efforts. Losing trained personnel drives significant hiring, onboarding, and salary-replacement costs, making attrition reduction a top corporate priority, yet no centralized, governed source of truth existed to act on.
+Overall attrition is **16.1%**, above the 10 to 15% industry range. HR Leadership had no central view of where and why people were leaving. Data sat in disconnected records, and analysis was manual, slow and inconsistent between reporting cycles.
 
-Before any data work began, the engagement was scoped through a formal **[Business Requirements Document](Docs/BRD_HR_Attrition_Dashboard.docx)**, defining objectives, in/out-of-scope boundaries, stakeholders, and success metrics. This is the standard a management-consulting or enterprise analytics team holds itself to before touching a dataset.
+Unplanned attrition has real cost: recruiting, onboarding, lost productivity during ramp-up and lost knowledge. Without segment-level visibility, retention budget gets spent reactively instead of on the highest-risk groups.
 
-The dashboard was built to answer three core business questions:
+Questions this project answers:
 
-1. **What is the overall attrition rate?**
-2. **Which departments are losing the most employees?**
-3. **What is the relationship between pay, age, and an employee's decision to leave?**
+1. What is the overall attrition rate, and how does it compare to the benchmark?
+2. Which departments and job roles lose the most people?
+3. How do pay and age relate to leaving?
+4. Which working conditions (overtime, travel, marital status) correlate most with leaving?
 
-## Project Deliverables
-
-This repository is structured as a complete analytics engagement, not just a dashboard file.
-
-| Deliverable | Purpose |
-|---|---|
-| **[Business Requirements Document](Docs/BRD_HR_Attrition_Dashboard.docx)** | Problem definition, scope, stakeholders, and success criteria, agreed before build |
-| **[HR Attrition Analysis.pbix](Dashboard/HR%20Attrition%20Analysis.pbix)** | Full interactive Power BI report |
-| **[HR Attrition Analysis.pbit](Dashboard/HR%20Attrition%20Analysis.pbit)** | Reusable template for rebuilding against new data |
-| **[Stakeholder Presentation](Docs/HR_Attrition_Presentation.pptx)** | Executive-ready summary of problem, method, and findings |
-| **[Live Dashboard link](https://app.fabric.microsoft.com/links/beNxlPJ9tw?ctid=e93d71d6-b5c0-4b78-a861-d9964ecdfcd6&pbi_source=linkShare)** | Published, governed report for HR Leadership self-service |
+Full requirements are in the [BRD](Docs/BRD.pdf).
 
 ## Dataset Description
 
-| Detail | Description |
+| Item | Detail |
 |---|---|
-| **File** | `HR-Employee-Attrition.csv` |
-| **Records** | 1,470 employees |
-| **Grain** | One row per employee |
-| **Source** | [IBM HR Analytics Employee Attrition Dataset](https://www.kaggle.com/datasets/pavansubhasht/ibm-hr-analytics-attrition-dataset) |
-| **Key Fields** | `Age`, `Attrition`, `Department`, `JobRole`, `MonthlyIncome`, `OverTime`, `BusinessTravel`, `MaritalStatus`, `Gender`, `EducationField`, `YearsAtCompany` |
-| **Engineered Fields** | `Salary Band` (income bracket), `Age Group` (age bracket), created in Dataflow Gen2 to simplify visual analysis |
+| File | `Data/HR-Employee-Attrition.csv` |
+| Records | 1,470 employees (one row per employee) |
+| Source columns | 35 (age, attrition, department, job role, monthly income, overtime, travel, marital status, education field, years at company and more) |
+| Engineered columns | Age Group, Salary Band (37 columns in the Lakehouse table) |
+| Target field | `Attrition` (Yes / No) |
+| Origin | Public IBM HR Analytics Employee Attrition dataset (fictional data created by IBM data scientists) |
 
 ## Tools & Technologies
 
-| Category | Tool |
-|---|---|
-| Requirements & Scoping | Business Requirements Document (Word) |
-| Data Ingestion & ETL | Microsoft Fabric, Dataflow Gen2 |
-| Data Storage | Microsoft Fabric, Lakehouse (OneLake) |
-| Semantic Modeling | Power BI Semantic Model, DAX |
-| Visualization | Power BI Desktop / Power BI Service |
-| Governance | Column-Level Security (Fabric OneLake Security) |
-| Stakeholder Communication | PowerPoint executive readout |
-| Version Control | Git & GitHub |
+- **Microsoft Fabric:** Dataflow Gen2, Lakehouse, OneLake Security
+- **Power BI:** semantic model, DAX measures, interactive report
+- **DAX:** KPI measures (attrition rate, employees left, headcount, average income, average tenure of leavers)
+- **Git / GitHub:** version control and documentation
 
 ## Project Structure
 
 ```
-hr-attrition-insights/
+HR-Attrition-Analytics-Dashboard/
 ├── Dashboard/
-│   ├── HR Attrition Analysis.pbix       # Full Power BI report
-│   ├── HR Attrition Analysis.pbit       # Reusable template version
-│   └── Readme
+│   ├── HR Attrition Analysis.pbit
+│   ├── HR Attrition Analysis.pbix
+│   ├── HR Attrition Analysis.pdf
+│   └── README.md
 ├── Data/
-│   ├── HR-Employee-Attrition.csv        # Raw source dataset
-│   └── Readme
+│   ├── HR-Employee-Attrition.csv
+│   └── README.md
 ├── Docs/
-│   ├── BRD_HR_Attrition_Dashboard.docx  # Business Requirements Document
-│   ├── HR_Attrition_Presentation.pptx   # Executive stakeholder deck
-│   └── Readme
+│   ├── BRD.pdf
+│   ├── HR_Attrition_Presentation.pdf
+│   └── README.md
 ├── Screenshots/
-│   ├── Fabric.png                       # Fabric workspace setup
-│   ├── Lakehouse.png                    # Lakehouse table load
-│   ├── Schematic model.png              # Semantic model view
-│   ├── Overview.png                     # Dashboard, Overview page
-│   ├── Deep Dive.png                    # Dashboard, Deep Dive page
-│   └── Readme
+│   ├── Deep Dive.png
+│   ├── Fabric.png
+│   ├── Lakehouse.png
+│   ├── Overview.png
+│   ├── Schematic model.png
+│   └── README.md
 ├── LICENSE
 └── README.md
 ```
 
-## Methodology
+## Data Cleaning & Preparation
 
-**1. Requirements first.** Objectives, scope, and success metrics were documented and agreed in the BRD before any pipeline work began, preventing scope creep and keeping the build accountable to the business questions it exists to answer.
+1. **Ingest:** Dataflow Gen2 loaded the raw CSV through the Web/CSV connector.
+2. **Enrich:** created `Age Group` (18 to 25, 26 to 35, 36 to 45, 45 to 60) and `Salary Band` (Under 3k, 3k to 6k, 6k to 10k, Above 10k) for readable grouped visuals.
+3. **Store:** loaded to Lakehouse `Lh_HR` as flat table `Hr_employees`. A flat table fits a dataset under 2,000 rows, so a star schema adds complexity with no benefit.
+4. **Model:** built a semantic model on top of the Lakehouse table with 5 core DAX measures.
+5. **Secure:** applied column-level security on `MonthlyIncome` so general viewers cannot see individual salary, while salary-band analysis still works in aggregate.
 
-**2. Data Cleaning & Preparation.** Performed inside **Dataflow Gen2** prior to loading into the Lakehouse:
-- Connected to the raw CSV via the Web/CSV connector (Anonymous auth, UTF-8 encoding, comma-delimited); data types auto-evaluated from the first 200 rows.
-- Created a **Salary Band** calculated column, grouping `MonthlyIncome` into readable brackets (`Under 3K`, `3K to 6K`, `6K to 10K`, etc.) to reduce visual clutter and unlock grouped analysis.
-- Created an **Age Group** calculated column, banding raw ages (`18 to 25`, `25 to 35`, `35 to 45`, `Above 45`), keeping categories to 5 to 7 groups for clean visuals.
-- Explicitly set data types on both engineered columns before loading, required for a successful Lakehouse import.
-- Loaded the cleaned flat table into the Fabric Lakehouse and built a semantic model directly on top of it. A flat-table design was chosen over a star schema, since the dataset is under 2,000 rows.
+## EDA & Key Insights
 
-**3. Semantic Modeling.** Five core DAX measures power the dashboard, **Attrition Rate**, **Head Count**, **Employees Left**, **Average Monthly Income**, and **Average Tenure of Leavers**, deliberately built as measures rather than raw column drags, to keep KPI logic centralized and auditable.
+| Segment | Attrition rate | Comparison |
+|---|---|---|
+| Sales Representatives | 39.8% | 33 of 83 left, company average 16.1% |
+| Age 18 to 25 | 35.8% | Age 36 to 45 is only 9.2% |
+| Overtime workers | 30.5% | Non-overtime 10.4%, about 3x gap |
+| Frequent travelers | 24.9% | Non-travelers 8.0%, about 3x gap |
+| Single employees | 25.5% | Married 12.5%, divorced 10.1% |
+| Sales department | 20.6% | HR 19.0%, R&D 13.8% |
+| Human Resources education field | 25.9% | Life Sciences 14.7%, Medical 13.6% |
 
-## Key Findings
+Other findings:
 
-- 📉 **Overall attrition rate: 16.1%**, above the 10 to 15% industry average, signaling a real organizational risk.
-- 🏢 **Sales** has the highest departmental attrition (20.6%), followed by HR (19.0%) and R&D (13.8%).
-- 💼 **Sales Representatives** are the highest-risk job role at **39.8% attrition**, more than double the org average.
-- 💰 **Lower salary bands correlate strongly with attrition.** The "Under 3K" band skews heavily toward departures.
-- 🎂 **Younger employees (18 to 25) leave at nearly 4x the rate** of employees aged 45 to 60 (35.8% vs. 12.5%).
-- ⏰ **Overtime workers leave far more often** than those who don't, one of the strongest single predictors of attrition.
-- ✈️ **Frequent business travelers** show almost 3x the attrition rate of non-travelers (24.9% vs. 8.0%).
-- 💍 **Single employees** leave at more than double the rate of married employees (25.5% vs. 12.5%).
-- 👥 **Gender split reverses by department.** Men leave more company-wide (17.0% vs. 14.8%), but women leave more within HR specifically, a nuance only visible through drill-down.
+- Overall: 237 of 1,470 employees left (16.1%). Average income is 6,503 per month. Leavers had an average tenure of 5.1 years.
+- Laboratory Technicians (23.9%) and Human Resources roles (23.1%) are also above the company average.
+- Men leave slightly more than women overall (17.0% vs 14.8%).
+- Lower salary bands skew toward departures, and the Salary Band split by gender is visible on the Overview page.
 
-## Dashboard Walkthrough
+Note: these results show correlation, not causation. Use them to guide HR judgment, not replace it.
 
-📊 **[View Live Dashboard](https://app.fabric.microsoft.com/links/beNxlPJ9tw?ctid=e93d71d6-b5c0-4b78-a861-d9964ecdfcd6&pbi_source=linkShare)**
+## Dashboard
 
-The report is built as a **two-page, cross-filterable Power BI experience** with a custom color theme (Red = negative, Green = positive, Yellow = neutral), drop-down slicers (Department, Gender, Salary Band), a hover-activated **Clear All Slicers** reset button, and a **Page Navigator** for smooth, web-style switching.
+Two cross-filterable pages with slicers for Department, Gender and Salary Band.
 
-### Overview Page
-KPI cards, attrition tree map, attrition-by-department bar chart, decomposition tree (Department → Job Role → Salary Band), and a job-role matrix with conditional data bars.
+**Overview:** KPI cards (attrition rate, employees left, headcount, average income, average tenure of leavers), department bar chart, decomposition tree (Department, Job Role, Salary Band), job role table and salary band split by gender.
 
-![Overview Page](Screenshots/Overview.png)
+![Overview](Screenshots/Overview.png)
 
-### Deep Dive Page
-Age Group risk matrix with conditional color bands (green/yellow/red), and operational driver breakdowns for OverTime, Business Travel, Marital Status, and Gender.
+**Deep Dive:** attrition by age group, gender, education field, marital status, business travel and overtime.
 
-![Deep Dive Page](Screenshots/Deep%20Dive.png)
+![Deep Dive](Screenshots/Deep%20Dive.png)
 
-## Governance & Data Security
+**Platform views:**
 
-`MonthlyIncome` is restricted at the default reader role via Fabric's **OneLake Column-Level Security**, so general viewers can explore attrition patterns without ever seeing individual salary values, while authorized workspace roles retain full access. This mirrors how compensation data is handled in a real enterprise HR analytics environment, where insight and confidentiality have to coexist.
+![Lakehouse](Screenshots/Lakehouse.png)
+
+![Semantic model](Screenshots/Schematic%20model.png)
+
+A PDF export is available at [`Dashboard/HR Attrition Analysis.pdf`](Dashboard/HR%20Attrition%20Analysis.pdf).
 
 ## How to Run This Project
 
-1. **Clone the repository**
+**Option A: open the report locally**
+
+1. Clone the repository:
    ```bash
-   git clone https://github.com/<your-username>/hr-attrition-insights.git
+   git clone https://github.com/seema-kri/HR-Attrition-Analytics-Dashboard.git
+   cd HR-Attrition-Analytics-Dashboard
    ```
-2. **Review the requirements.** Read [`Docs/BRD_HR_Attrition_Dashboard.docx`](Docs/BRD_HR_Attrition_Dashboard.docx) for the full problem scope and success criteria.
-3. **Open the report.**
-   - View it live via the **[Live Dashboard link](https://app.fabric.microsoft.com/links/beNxlPJ9tw?ctid=e93d71d6-b5c0-4b78-a861-d9964ecdfcd6&pbi_source=linkShare)**, or
-   - Open `Dashboard/HR Attrition Analysis.pbix` in **Power BI Desktop** to explore the full report, or
-   - Open the `.pbit` template and point it at your own copy of `Data/HR-Employee-Attrition.csv` to rebuild from scratch.
-4. **(Optional) Rebuild the Fabric pipeline.**
-   - Create a Fabric workspace, add a Dataflow Gen2, connect it to `Data/HR-Employee-Attrition.csv`, and recreate the Salary Band / Age Group transformation steps described above.
-   - Load into a Lakehouse and build a semantic model on the flat table.
-5. **Explore** using the Department, Gender, and Salary Band slicers, and drill into the Decomposition Tree for root-cause paths.
-6. **Present it.** [`Docs/HR_Attrition_Presentation.pptx`](Docs/HR_Attrition_Presentation.pptx) is ready to walk a stakeholder audience through the same story end to end.
+2. Install [Power BI Desktop](https://powerbi.microsoft.com/desktop/).
+3. Open `Dashboard/HR Attrition Analysis.pbix`.
+4. If prompted, update the data source to point to `Data/HR-Employee-Attrition.csv`, then click **Refresh**.
 
-## Recommendations & Roadmap
+**Option B: rebuild in Microsoft Fabric**
 
-**Recommendations:**
-- Prioritize retention budget on **Sales / Sales Representatives** and the **Under 3K salary band**, the two segments with the highest concentration of departures.
-- Review overtime policy and workload distribution, given its strong association with attrition.
-- Investigate travel-heavy roles for burnout risk and consider hybrid travel policies for frequent travelers.
-- Design targeted onboarding/engagement programs for employees under 25, the highest-attrition age group.
+1. Create a Fabric workspace and a Lakehouse (for example `Lh_HR`).
+2. Create a Dataflow Gen2, load `Data/HR-Employee-Attrition.csv`, add the `Age Group` and `Salary Band` columns, and send the output to the Lakehouse table `Hr_employees`.
+3. Create a semantic model from the Lakehouse table and add the DAX measures.
+4. Use `Dashboard/HR Attrition Analysis.pbit` as a template, point it at your semantic model, and publish.
+5. Restrict `MonthlyIncome` for general viewers with OneLake Security (column-level security).
 
-**Roadmap:**
-- Add a predictive attrition-risk model (Machine Learning) to score active employees.
-- Integrate Fabric Data Activator for automated alerts when a department's attrition rate crosses a threshold.
-- Introduce periodic snapshots or an exit-date field to enable true time-series trend analysis.
-- Enable Fabric Copilot for natural-language Q&A over the semantic model.
+A free Fabric trial is enough to follow these steps.
+
+## Final Recommendations / Future Work
+
+**Recommendations (ranked by evidence strength)**
+
+1. Fix pay and career path for Sales Representatives and review quota load. This is the highest-risk role at 39.8%.
+2. Review overtime policy and rebalance workload (30.5% vs 10.4%).
+3. Build structured onboarding and mentoring for employees aged 18 to 25 (35.8%).
+4. Cap travel or offer hybrid travel schedules for frequent travelers (24.9% vs 8.0%).
+
+**Illustrative impact:** cutting attrition to 25% for Sales Representatives and ages 18 to 25 would retain about 26 employees and bring company attrition from 16.1% to about 14.4%, back inside the industry range. The cost figure assumes replacement cost of 50% of annual pay and should be replaced with actual HR data.
+
+**Future work**
+
+- Add an exit-date field for true time-series trend analysis (current data is a point-in-time snapshot).
+- Build ML-based attrition risk scoring for active employees.
+- Add Fabric Data Activator alerts when attrition crosses a threshold.
+- Pilot the Sales recommendations and measure the result.
 
 ## Author & Contact
 
